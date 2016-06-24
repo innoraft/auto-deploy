@@ -1,0 +1,23 @@
+{
+  "name": "auto-deploy",
+  "version": "0.0.1",
+  "description": "To auto deploy via github.com",
+  "main": "index.js",
+  "dependencies": {
+    "github": "^1.4.0",
+    "request": "^2.72.0",
+    "simple-ssh": "^0.9.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": ""
+  },
+  "keywords": [
+    "deploy",
+    "auto",
+    "github",
+    "server",
+    "ssh"
+  ],
+  "author": "Sumit Sinha"
+}
