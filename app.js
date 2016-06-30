@@ -1,20 +1,13 @@
-var koa = require('koa');
-var route = require('koa-route'); //require it
-var app = koa();
-var q = require('q');
+var app = require('express')();
+var http = require('http').Server(app);
 
-var _globals = require('./_globals.js')
-    //and we'll set up 2 routes, for our index and about me pages
-app.use(route.get('/', index));
-app.use(route.get('/chooserepo', chooserepo));
-app.use(route.get('/addwebhook/:reponame', addwebhook));
+var _globals = require('./_globals.js');
 
-function* index() {
+app.get('/', function (req, res) {
     this.body = "<a href='https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/chooserepo'>link</a>";
-}
+});
 
-function* chooserepo() {
-    var deferred = q.defer();
+app.get('/chooserepo', function (req, res) {
     var request = require('request');
     request.post(
         'https://github.com/login/oauth/access_token',
@@ -29,7 +22,7 @@ function* chooserepo() {
                     //console.log(token);
                     getReposByToken(token, function(repolist){
                         //console.log(JSON.stringify(repolist));
-                        deferred.resolve(repolist);
+                        res.send(repolist);
                     });
                 }
                 else {
@@ -38,12 +31,11 @@ function* chooserepo() {
             }
         }
     );
-    this.body = yield deferred.promise;
-}
+});
 
-function* addwebhook() {
-    console.log(this);
-}
+app.get('/addwebhook/:reponame', function(req, res){
+    res.send(req.params.reponame);
+});
 
 function getReposByToken(token, callback){
     var GitHubApi = require("github");
@@ -65,17 +57,7 @@ function getReposByToken(token, callback){
         type: "oauth",
         token: token
     });
-
-//    github.repos.createHook({ 
-//    //    user: "",
-//    //    repo :"",
-//        name : "web",
-//        config	: {
-//            url : _globals.webhook_callback_url
-//        }
-//    }, function(err,res){
-//        console.log(JSON.stringify(res));
-//    });
+    
     github.repos.getAll({}, function (err, res){
         //console.log(JSON.stringify(res));
         var repolist={};
@@ -88,5 +70,39 @@ function getReposByToken(token, callback){
     });
 }
 
-app.listen(_globals.app_port);
-console.log('Koa listening on port ' + _globals.app_port);
+function createHookonRepo(reponame, callback){
+    var GitHubApi = require("github");
+
+    var github = new GitHubApi({
+        // optional
+        debug: true,
+        protocol: "https",
+        host: "api.github.com", // should be api.github.com for GitHub
+        pathPrefix: "", // for some GHEs; none for GitHub
+        timeout: 5000,
+        headers: {
+            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
+        },
+        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
+    });
+
+    github.authenticate({
+        type: "oauth",
+        token: token
+    });
+
+    github.repos.createHook({ 
+    //    user: "",
+        repo :reponame,
+        name : "web",
+        config	: {
+            url : _globals.webhook_callback_url
+        }
+    }, function(err,res){
+        console.log(JSON.stringify(res));
+    });
+}
+
+http.listen(_globals.app_port, function () {
+    console.log('listening on *:'+_globals.app_port);
+});
