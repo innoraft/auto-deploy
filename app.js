@@ -3,6 +3,9 @@ var http = require('http').Server(app);
 
 var _globals = require('./_globals.js');
 
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+
 app.get('/', function (req, res) {
    res.send("<a href='https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/chooserepo'>link</a>");
 });
@@ -20,8 +23,8 @@ app.get('/chooserepo', function (req, res) {
                     var token = body.access_token;
                     //console.log(token);
                     getReposByToken(token, function(repolist){
-                        //console.log(JSON.stringify(repolist));
-                        res.send(repolist);
+                        console.log(JSON.stringify(repolist));
+                        res.render('repolist',{repolist:repolist, token:token});
                     });
                 }
                 else {
@@ -32,8 +35,32 @@ app.get('/chooserepo', function (req, res) {
     );
 });
 
-app.get('/addwebhook/:reponame', function(req, res){
-    res.send(req.params.reponame);
+app.get('/addwebhook/:reponame/:owner/:token', function(req, res){
+    //res.send(req.params.reponame);
+    createHookonRepo(req.params.reponame, req.params.owner ,req.params.token , function(resl){
+       res.send(res); 
+    });
+});
+
+app.get('/pullrepo/:reponame', function(req, res){
+    //to the server of reponame and pull it
+    //SSH unit
+    //var SSH = require('simple-ssh');
+    // 
+    //var ssh = new SSH({
+    //    host: _globals.ssh_host,
+    //    user: _globals.ssh_user,
+    //    pass: _globals.ssh_pass
+    //});
+    // 
+    //ssh.exec('pwd', {
+    //    out: function(stdout) {
+    //        console.log(stdout);
+    //    },
+    //    err: function(stderr) {
+    //        console.log(stderr); // this-does-not-exist: command not found 
+    //    }
+    //}).start();
 });
 
 function getReposByToken(token, callback){
@@ -58,10 +85,10 @@ function getReposByToken(token, callback){
     });
     
     github.repos.getAll({}, function (err, resl){
-        //console.log(JSON.stringify(res));
-        var repolist={};
+        //console.log(JSON.stringify(resl));
+        var repolist=[];
         resl.forEach(function (v,i) {
-          repolist[i]=v.name;
+          repolist.push({name: v.name, owner: v.owner.login, fullname:v.full_name});
           if(i==resl.length-1) {
               callback(repolist);
           }
@@ -69,7 +96,7 @@ function getReposByToken(token, callback){
     });
 }
 
-function createHookonRepo(reponame, callback){
+function createHookonRepo(reponame, username, token, callback){
     var GitHubApi = require("github");
 
     var github = new GitHubApi({
@@ -91,14 +118,15 @@ function createHookonRepo(reponame, callback){
     });
 
     github.repos.createHook({ 
-    //    user: "",
+        user: username,
         repo :reponame,
         name : "web",
         config	: {
-            url : _globals.webhook_callback_url
+            url : _globals.webhook_callback_url+'/pullrepo/'+reponame
         }
-    }, function(err,res){
-        console.log(JSON.stringify(res));
+    }, function(err,resl){
+        console.log(JSON.stringify(resl));
+        callback(resl);
     });
 }
 

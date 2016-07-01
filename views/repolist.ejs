@@ -1,0 +1,7 @@
+<html>
+    <body>
+        <%for (i in repolist){%>
+            <a href='/addwebhook/<%=repolist[i].name%>/<%=repolist[i].owner%>/<%=token%>'><%=repolist[i].fullname%></a>
+        <%}%>
+    </body>
+</html>
