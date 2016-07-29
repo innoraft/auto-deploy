@@ -14,15 +14,17 @@ app.set('view engine', 'ejs');
 app.get('/', function (req, res) {
    res.render('detailgather');
 });
+
+var _username = "";
 app.get('/forwardtoauth', function (req, res) {
+    _username = req.query.username;
     User = Users;
-    User.newUser(req.query.username, function(done) {
+    User.newUser(_username, function(done) {
         if(!done.status){
             res.send("Please retry");
         }
         else{
             res.redirect("https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/chooserepo");
-            //res.send("<a href='https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/chooserepo'>link</a>");
         }
     });
 });
@@ -38,6 +40,10 @@ app.get('/chooserepo', function (req, res) {
                 console.log(body)
                 if(body.scope == 'repo') {
                     var token = body.access_token;
+                    User = Users;
+                    User.addTokenToUser(_username, token, function(done){
+                        console.log("saved token :",done.status);
+                    })
                     //console.log(token);
                     getReposByToken(token, function(repolist){
                         console.log(JSON.stringify(repolist));

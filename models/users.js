@@ -20,5 +20,19 @@ UserSchema.statics.newUser=function(username,callback){
     });    
 };
 
+UserSchema.statics.addTokenToUser=function(username,token,callback){
+    this.update({username:username},{token:token},function(err,data){
+        if(err) { 
+            var output={status: false, message:err};
+            callback(output);
+        }
+        else
+        {
+           var output={status: true, id:data._id};
+            callback(output);
+        }
+    });    
+};
+
 
 module.exports = mongoose.model('User', UserSchema);
