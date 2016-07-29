@@ -20,6 +20,40 @@ UserSchema.statics.newUser=function(username,callback){
     });    
 };
 
+UserSchema.statics.findUser=function(username, callback){
+    this.findOne({username:username},function(err,data){
+        if(err) { 
+            var output={status: false, message:err};
+            callback(output);
+        }
+        else if(data.token == undefined) {
+            UserSchema.removeUser(username, function(done){
+                var output={status: false, message:"No Token found"};
+                callback(output);
+            })
+        }
+        else
+        {
+           var output={status: true, token:data.token};
+            callback(output);
+        }
+    });    
+};
+
+UserSchema.statics.removeUser=function(username, callback){
+    this.remove({username:username},function(err,data){
+        if(err) { 
+            var output={status: false, message:err};
+            callback(output);
+        }
+        else
+        {
+           var output={status: true};
+            callback(output);
+        }
+    });    
+};
+
 UserSchema.statics.addTokenToUser=function(username,token,callback){
     this.update({username:username},{token:token},function(err,data){
         if(err) { 
