@@ -1,5 +1,10 @@
 var app = require('express')();
 var http = require('http').Server(app);
+var mongoose = require('mongoose');
+
+mongoose.connect('mongodb://localhost/'+_globals.dbname);
+Users = require('./models/users');
+Pulls = require('./models/pulls');
 
 var _globals = require('./_globals.js');
 

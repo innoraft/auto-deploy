@@ -7,6 +7,7 @@ _globals = {
     ,ssh_user: "username"
     ,ssh_pass: "password"
     ,webhook_callback_url: "<url>"
+    ,dbname:"autodeploy"
 }
 
 module.exports = _globals;
