@@ -61,14 +61,14 @@ var request = require('request');
             }
         }
     );
-}
+});
 
 app.get('/chooserepo/:token', function (req, res) {
     if(req.params.token != undefined || req.params.token != null)
     {
         getReposByToken(req.params.token, function(repolist){
             console.log(JSON.stringify(repolist));
-            res.render('repolist',{repolist:repolist, token:token});
+            res.render('repolist',{repolist:repolist, token:req.params.token});
         });
     }
     else
