@@ -2,17 +2,29 @@ var app = require('express')();
 var http = require('http').Server(app);
 var mongoose = require('mongoose');
 
+var _globals = require('./_globals.js');
+
 mongoose.connect('mongodb://localhost/'+_globals.dbname);
 Users = require('./models/users');
 Pulls = require('./models/pulls');
-
-var _globals = require('./_globals.js');
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 
 app.get('/', function (req, res) {
-   res.send("<a href='https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/chooserepo'>link</a>");
+   res.render('detailgather');
+});
+app.get('/forwardtoauth', function (req, res) {
+    User = Users;
+    User.newUser(req.query.username, function(done) {
+        if(!done.status){
+            res.send("Please retry");
+        }
+        else{
+            res.redirect("https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/chooserepo");
+            //res.send("<a href='https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/chooserepo'>link</a>");
+        }
+    });
 });
 
 app.get('/chooserepo', function (req, res) {
@@ -33,7 +45,7 @@ app.get('/chooserepo', function (req, res) {
                     });
                 }
                 else {
-                    this.body = "Did you mess with the request?";
+                     res.send("Did you mess with the request?");
                 }
             }
         }

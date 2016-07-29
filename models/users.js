@@ -6,8 +6,8 @@ var UserSchema   = new Schema({
 	token : String,
 }, { versionKey: false } );
 
-UserSchema.statics.newUser=function(username,token,callback){
-    this.create({username:username, token:token},function(err,data){
+UserSchema.statics.newUser=function(username,callback){
+    this.create({username:username},function(err,data){
         if(err) { 
             var output={status: false, message:err};
             callback(output);
