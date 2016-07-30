@@ -84,13 +84,20 @@ app.get('/choosebranch/:reponame/:owner/:token', function(req, res){
 });
 
 app.get('/addwebhook/:owner/:reponame/:branch/:token', function(req, res){
-    //res.send(req.params.reponame);
-    createHookonRepo(req.params.owner, req.params.reponame, req.params.branch, req.params.token , function(resl){
+    var owner = req.params.owner,
+        reponame = req.params.reponame,
+        branch = req.params.branch,
+        token = req.params.token;
+    
+    // Pull = Pulls;
+    // Pull.newPull(reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(){});
+        //
+    createHookonRepo(owner, reponame, branch, token , function(resl){
        res.send(resl); 
     });
 });
 
-app.get('/pullrepo/:reponame', function(req, res){
+app.get('/pullrepo/:reponame/:branch', function(req, res){
     //to the server of reponame and pull it
     //SSH unit
     //var SSH = require('simple-ssh');
@@ -201,7 +208,7 @@ function getBranches(token, repo, user, page, branchlist, callback){
     });
 }
 
-function createHookonRepo(reponame, username, token, callback){
+function createHookonRepo(username, reponame, branch , token, callback){
     var GitHubApi = require("github");
 
     var github = new GitHubApi({
@@ -227,7 +234,7 @@ function createHookonRepo(reponame, username, token, callback){
         repo :reponame,
         name : "web",
         config	: {
-            url : _globals.webhook_callback_url+'/pullrepo/'+reponame
+            url : _globals.webhook_callback_url+'/pullrepo/'+reponame+'/'+branch
         }
     }, function(err,resl){
         console.log(JSON.stringify(resl));

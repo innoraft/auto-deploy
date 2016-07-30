@@ -3,7 +3,8 @@ var Schema       = mongoose.Schema;
 
 var PullSchema   = new Schema({
     //pid : { type : String, required : true, unique : true }, 
-	hookurl : String,
+	repo : String,
+	branch : String,
 	serverip : String,
 	serveruser : String,
 	serverpass : String,
@@ -11,8 +12,9 @@ var PullSchema   = new Schema({
 	command : String,
 }, { versionKey: false } );
 
-PullSchema.statics.newPull=function(hookurl,serverip,serveruser,serverpass,serverpath,command,callback){
-    this.create({hookurl : hookurl,
+PullSchema.statics.newPull=function(repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
+    this.create({repo : repo,
+    branch : branch,
 	serverip : serverip,
 	serveruser : serveruser,
 	serverpass : serverpass,
