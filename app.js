@@ -44,7 +44,7 @@ var request = require('request');
         'https://github.com/login/oauth/access_token',
         { json: { code: req.query.code, client_id:_globals.client_id , client_secret:_globals.client_secret} },
         function (error, response, body) {
-            console.log(response);
+            //console.log(response);
             if (!error && response.statusCode == 200) {
                 console.log(body)
                 if(body.scope == 'repo') {
@@ -66,8 +66,7 @@ var request = require('request');
 app.get('/chooserepo/:token', function (req, res) {
     if(req.params.token != undefined || req.params.token != null)
     {
-        getReposByToken(req.params.token, function(repolist){
-            console.log(JSON.stringify(repolist));
+        getReposByToken(req.params.token, 1, [], function(repolist){
             res.render('repolist',{repolist:repolist, token:req.params.token});
         });
     }
@@ -80,7 +79,7 @@ app.get('/chooserepo/:token', function (req, res) {
 app.get('/addwebhook/:reponame/:owner/:token', function(req, res){
     //res.send(req.params.reponame);
     createHookonRepo(req.params.reponame, req.params.owner ,req.params.token , function(resl){
-       res.send(res); 
+       res.send(resl); 
     });
 });
 
@@ -105,7 +104,7 @@ app.get('/pullrepo/:reponame', function(req, res){
     //}).start();
 });
 
-function getReposByToken(token, callback){
+function getReposByToken(token, page, repolist, callback){
     var GitHubApi = require("github");
 
     var github = new GitHubApi({
@@ -126,15 +125,27 @@ function getReposByToken(token, callback){
         token: token
     });
     
-    github.repos.getAll({}, function (err, resl){
-        //console.log(JSON.stringify(resl));
-        var repolist=[];
-        resl.forEach(function (v,i) {
-          repolist.push({name: v.name, owner: v.owner.login, fullname:v.full_name});
-          if(i==resl.length-1) {
-              callback(repolist);
-          }
-        });
+    github.repos.getAll({per_page:10, page:page}, function (err, resl){
+        //console.log(JSON.stringify("one fetch = ",resl));
+        packRepos(resl);
+        if (github.hasNextPage(resl)) {
+            getReposByToken(token, ++page, repolist, callback)
+        }
+        else
+            packRepos(null);
+        function packRepos(resl)
+        {
+            if(resl == null) {
+                console.log(JSON.stringify(repolist));
+                callback(repolist);
+            }
+            else
+            {
+                resl.forEach(function (v,i) {
+                  repolist.push({name: v.name, owner: v.owner.login, fullname:v.full_name});
+                });
+            }
+        }
     });
 }
 
