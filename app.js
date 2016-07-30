@@ -66,7 +66,7 @@ var request = require('request');
 app.get('/chooserepo/:token', function (req, res) {
     if(req.params.token != undefined || req.params.token != null)
     {
-        getReposByToken(req.params.token, 1, [], function(repolist){
+        getRepos(req.params.token, 1, [], function(repolist){
             res.render('repolist',{repolist:repolist, token:req.params.token});
         });
     }
@@ -76,9 +76,16 @@ app.get('/chooserepo/:token', function (req, res) {
     }
 });
 
-app.get('/addwebhook/:reponame/:owner/:token', function(req, res){
+app.get('/choosebranch/:reponame/:owner/:token', function(req, res){
     //res.send(req.params.reponame);
-    createHookonRepo(req.params.reponame, req.params.owner ,req.params.token , function(resl){
+    getBranches(req.params.token, req.params.reponame, req.params.owner , 1, [], function(branchlist){
+        res.render('branchlist',{branchlist:branchlist, token:req.params.token, reponame:req.params.reponame, owner:req.params.owner});
+    });
+});
+
+app.get('/addwebhook/:owner/:reponame/:branch/:token', function(req, res){
+    //res.send(req.params.reponame);
+    createHookonRepo(req.params.owner, req.params.reponame, req.params.branch, req.params.token , function(resl){
        res.send(resl); 
     });
 });
@@ -104,7 +111,7 @@ app.get('/pullrepo/:reponame', function(req, res){
     //}).start();
 });
 
-function getReposByToken(token, page, repolist, callback){
+function getRepos(token, page, repolist, callback){
     var GitHubApi = require("github");
 
     var github = new GitHubApi({
@@ -129,7 +136,7 @@ function getReposByToken(token, page, repolist, callback){
         //console.log(JSON.stringify("one fetch = ",resl));
         packRepos(resl);
         if (github.hasNextPage(resl)) {
-            getReposByToken(token, ++page, repolist, callback)
+            getRepos(token, ++page, repolist, callback);
         }
         else
             packRepos(null);
@@ -143,6 +150,51 @@ function getReposByToken(token, page, repolist, callback){
             {
                 resl.forEach(function (v,i) {
                   repolist.push({name: v.name, owner: v.owner.login, fullname:v.full_name});
+                });
+            }
+        }
+    });
+}
+
+function getBranches(token, repo, user, page, branchlist, callback){
+    var GitHubApi = require("github");
+
+    var github = new GitHubApi({
+        // optional
+        debug: true,
+        protocol: "https",
+        host: "api.github.com", // should be api.github.com for GitHub
+        pathPrefix: "", // for some GHEs; none for GitHub
+        timeout: 5000,
+        headers: {
+            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
+        },
+        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
+    });
+
+    github.authenticate({
+        type: "oauth",
+        token: token
+    });
+    
+    github.repos.getBranches({user: user, repo:repo, per_page:10, page:page}, function (err, resl){
+        //console.log(JSON.stringify(resl));
+        packBranches(resl);
+        if (github.hasNextPage(resl)) {
+            getBranches(token, ++page, branchlist, callback);
+        }
+        else
+            packBranches(null);
+        function packBranches(resl)
+        {
+            if(resl == null) {
+                console.log(JSON.stringify(branchlist));
+                callback(branchlist);
+            }
+            else
+            {
+                resl.forEach(function (v,i) {
+                  branchlist.push({name: v.name});
                 });
             }
         }
