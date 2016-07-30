@@ -89,11 +89,19 @@ app.get('/addwebhook/:owner/:reponame/:branch/:token', function(req, res){
         branch = req.params.branch,
         token = req.params.token;
     
-    // Pull = Pulls;
-    // Pull.newPull(reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(){});
-        //
     createHookonRepo(owner, reponame, branch, token , function(resl){
-       res.send(resl); 
+        var hookid = resl.id;
+        Pull = Pulls;
+        Pull.newPull(hookid, reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(done){
+            if(done.status)
+                res.send(resl);
+            else
+                {
+                    deleteHookId(owner, reponame, hookid , token, function(result){
+                        res.send("Opps try again.")
+                    });
+                }
+        });
     });
 });
 
@@ -236,6 +244,37 @@ function createHookonRepo(username, reponame, branch , token, callback){
         config	: {
             url : _globals.webhook_callback_url+'/pullrepo/'+reponame+'/'+branch
         }
+    }, function(err,resl){
+        console.log(JSON.stringify(resl));
+        callback(resl);
+    });
+}
+
+function deleteHookId(username, reponame, id , token, callback){
+    var GitHubApi = require("github");
+
+    var github = new GitHubApi({
+        // optional
+        debug: true,
+        protocol: "https",
+        host: "api.github.com", // should be api.github.com for GitHub
+        pathPrefix: "", // for some GHEs; none for GitHub
+        timeout: 5000,
+        headers: {
+            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
+        },
+        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
+    });
+
+    github.authenticate({
+        type: "oauth",
+        token: token
+    });
+
+    github.repos.deleteHook({ 
+        user: username,
+        repo :reponame,
+        id : id,
     }, function(err,resl){
         console.log(JSON.stringify(resl));
         callback(resl);

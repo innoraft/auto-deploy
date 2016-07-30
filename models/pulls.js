@@ -2,7 +2,8 @@ var mongoose     = require('mongoose');
 var Schema       = mongoose.Schema;
 
 var PullSchema   = new Schema({
-    //pid : { type : String, required : true, unique : true }, 
+    //pid : { type : String, required : true, unique : true },
+    hookid : String,
 	repo : String,
 	branch : String,
 	serverip : String,
@@ -12,8 +13,10 @@ var PullSchema   = new Schema({
 	command : String,
 }, { versionKey: false } );
 
-PullSchema.statics.newPull=function(repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
-    this.create({repo : repo,
+PullSchema.statics.newPull=function(id, repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
+    this.create({
+    hookid:id,
+    repo : repo,
     branch : branch,
 	serverip : serverip,
 	serveruser : serveruser,
