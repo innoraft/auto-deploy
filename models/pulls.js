@@ -4,6 +4,7 @@ var Schema       = mongoose.Schema;
 var PullSchema   = new Schema({
     //pid : { type : String, required : true, unique : true },
     hookid : String,
+    user: String,
 	repo : String,
 	branch : String,
 	serverip : String,
@@ -13,9 +14,10 @@ var PullSchema   = new Schema({
 	command : String,
 }, { versionKey: false } );
 
-PullSchema.statics.newPull=function(id, repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
+PullSchema.statics.newPull=function(id,user, repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
     this.create({
     hookid:id,
+    user:user,
     repo : repo,
     branch : branch,
 	serverip : serverip,
@@ -35,8 +37,8 @@ PullSchema.statics.newPull=function(id, repo, branch,serverip,serveruser,serverp
     });    
 };
 
-PullSchema.statics.getPull=function(id, repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
-    this.findOne({repo:repo, branch:branch},function(err,data){
+PullSchema.statics.getPull=function(id,user, repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
+    this.findOne({user:user,repo:repo, branch:branch},function(err,data){
         if(err) { 
             var output={status: false, message:err};
             callback(output);

@@ -107,7 +107,7 @@ app.post('/addwebhook', function(req, res){
     createHookonRepo(owner, reponame, branch, token , function(resl){
         var hookid = resl.id;
         Pull = Pulls;
-        Pull.newPull(hookid, reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(done){
+        Pull.newPull(hookid, owner, reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(done){
             if(done.status)
                 res.send(resl);
             else
@@ -120,11 +120,12 @@ app.post('/addwebhook', function(req, res){
     });
 });
 
-app.get('/pullrepo/:reponame/:branch', function(req, res){
+app.get('/pullrepo/:user/:reponame/:branch', function(req, res){
     var repo =  req.params.reponame,
-        branch = req.params.branch;
+        branch = req.params.branch,
+        user = req.params.user;
     Pull = Pulls;
-    Pull.getPull( repo, branch, function(done){
+    Pull.getPull( user, repo, branch, function(done){
         if(!done.status){
             console.log("Repo and branch not foundin DB.", repo, branch);
         }
@@ -265,7 +266,7 @@ function createHookonRepo(username, reponame, branch , token, callback){
         repo :reponame,
         name : "web",
         config	: {
-            url : _globals.webhook_callback_url+'/pullrepo/'+reponame+'/'+branch
+            url : _globals.webhook_callback_url+'/pullrepo/'+username+'/'+reponame+'/'+branch
         }
     }, function(err,resl){
         console.log(JSON.stringify(resl));
