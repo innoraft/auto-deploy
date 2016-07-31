@@ -1,6 +1,12 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var mongoose = require('mongoose');
+var bodyParser = require('body-parser');
+
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+app.use(bodyParser.json());
 
 var _globals = require('./_globals.js');
 
@@ -16,13 +22,15 @@ app.get('/', function (req, res) {
 });
 
 var _username = "";
+var _token = "";
 app.get('/forwardtoauth', function (req, res) {
     _username = req.query.username;
     User = Users;
     User.findUser(_username, function(done){
         if(done.status)
         {
-            res.redirect(/chooserepo/+done.token);
+            _token = done.token;
+            res.redirect(/chooserepo/);
         }
         else
         {
@@ -53,7 +61,8 @@ var request = require('request');
                     User.addTokenToUser(_username, token, function(done){
                         console.log("saved token :",done.status);
                     })
-                    res.redirect(/chooserepo/+token);
+                    _token = token;
+                    res.redirect(/chooserepo/);
                 }
                 else {
                      res.send("Did you mess with the request?");
@@ -63,11 +72,11 @@ var request = require('request');
     );
 });
 
-app.get('/chooserepo/:token', function (req, res) {
-    if(req.params.token != undefined || req.params.token != null)
+app.get('/chooserepo', function (req, res) {
+    if(_token != "")
     {
-        getRepos(req.params.token, 1, [], function(repolist){
-            res.render('repolist',{repolist:repolist, token:req.params.token});
+        getRepos(_token, 1, [], function(repolist){
+            res.render('hookform',{repolist:repolist, token:_token});
         });
     }
     else
@@ -76,18 +85,24 @@ app.get('/chooserepo/:token', function (req, res) {
     }
 });
 
-app.get('/choosebranch/:reponame/:owner/:token', function(req, res){
+app.get('/choosebranch/:reponame/:owner', function(req, res){
     //res.send(req.params.reponame);
-    getBranches(req.params.token, req.params.reponame, req.params.owner , 1, [], function(branchlist){
-        res.render('branchlist',{branchlist:branchlist, token:req.params.token, reponame:req.params.reponame, owner:req.params.owner});
+    getBranches(_token, req.params.reponame, req.params.owner , 1, [], function(branchlist){
+        res.send(branchlist);
     });
 });
 
-app.get('/addwebhook/:owner/:reponame/:branch/:token', function(req, res){
-    var owner = req.params.owner,
-        reponame = req.params.reponame,
-        branch = req.params.branch,
-        token = req.params.token;
+app.post('/addwebhook', function(req, res){
+    console.log(req.body);
+    var owner = req.body.owner,
+        reponame = req.body.reponame,
+        branch = req.body.branch,
+        serverip = req.body.serverip,
+        serveruser = req.body.serveruser,
+        serverpass = req.body.serverpass,
+        serverpath = req.body.serverpath,
+        command = req.body.command,
+        token = _token;
     
     createHookonRepo(owner, reponame, branch, token , function(resl){
         var hookid = resl.id;
@@ -106,24 +121,32 @@ app.get('/addwebhook/:owner/:reponame/:branch/:token', function(req, res){
 });
 
 app.get('/pullrepo/:reponame/:branch', function(req, res){
-    //to the server of reponame and pull it
-    //SSH unit
-    //var SSH = require('simple-ssh');
-    // 
-    //var ssh = new SSH({
-    //    host: _globals.ssh_host,
-    //    user: _globals.ssh_user,
-    //    pass: _globals.ssh_pass
-    //});
-    // 
-    //ssh.exec('pwd', {
-    //    out: function(stdout) {
-    //        console.log(stdout);
-    //    },
-    //    err: function(stderr) {
-    //        console.log(stderr); // this-does-not-exist: command not found 
-    //    }
-    //}).start();
+    var repo =  req.params.reponame,
+        branch = req.params.branch;
+    Pull = Pulls;
+    Pull.getPull( repo, branch, function(done){
+        if(!done.status){
+            console.log("Repo and branch not foundin DB.", repo, branch);
+        }
+        else{
+                var SSH = require('simple-ssh');
+
+                var ssh = new SSH({
+                    host: done.data.serverip,
+                    user: done.data.serveruser,
+                    pass: done.data.serverpass
+                });
+
+                ssh.exec("cd "+done.data.serverpath+" && "+done.data.command, {
+                    out: function(stdout) {
+                        console.log(stdout);
+                    },
+                    err: function(stderr) {
+                        console.log(stderr); // this-does-not-exist: command not found 
+                    }
+                }).start();
+        }
+    });
 });
 
 function getRepos(token, page, repolist, callback){
@@ -147,7 +170,7 @@ function getRepos(token, page, repolist, callback){
         token: token
     });
     
-    github.repos.getAll({per_page:10, page:page}, function (err, resl){
+    github.repos.getAll({per_page:100, page:page}, function (err, resl){
         //console.log(JSON.stringify("one fetch = ",resl));
         packRepos(resl);
         if (github.hasNextPage(resl)) {
@@ -192,7 +215,7 @@ function getBranches(token, repo, user, page, branchlist, callback){
         token: token
     });
     
-    github.repos.getBranches({user: user, repo:repo, per_page:10, page:page}, function (err, resl){
+    github.repos.getBranches({user: user, repo:repo, per_page:100, page:page}, function (err, resl){
         //console.log(JSON.stringify(resl));
         packBranches(resl);
         if (github.hasNextPage(resl)) {

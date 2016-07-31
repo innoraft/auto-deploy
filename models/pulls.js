@@ -35,5 +35,19 @@ PullSchema.statics.newPull=function(id, repo, branch,serverip,serveruser,serverp
     });    
 };
 
+PullSchema.statics.getPull=function(id, repo, branch,serverip,serveruser,serverpass,serverpath,command,callback){
+    this.findOne({repo:repo, branch:branch},function(err,data){
+        if(err) { 
+            var output={status: false, message:err};
+            callback(output);
+        }
+        else
+        {
+           var output={status: true, data:data};
+            callback(output);
+        }
+    });    
+};
+
 
 module.exports = mongoose.model('Pull', PullSchema);

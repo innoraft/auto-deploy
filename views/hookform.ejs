@@ -1,0 +1,85 @@
+<html>
+    <script src= "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script> 
+    <body ng-app="autoDeploy" ng-controller="mainController">
+        <div class="container">
+            <div class="list repo">
+                <%for (i in repolist){%>
+                    <button ng-model="data.repo" ng-click="fetchBranch($event)" repo="<%=repolist[i].name%>" owner="<%=repolist[i].owner%>"><%=repolist[i].fullname%></button>
+                <%}%>
+            </div>
+            <div ng-show = "branches" class="list branch" ng-repeat="names in branches">
+                <button ng-model="data.repo" ng-click="loadForm($event)" branch="{{names.name}}">{{names.name}}</button>
+            </div>
+            <form ng-show = "loadform" ng-submit="addHook()">
+                <label>Server IP</label>
+                <input name="ip" placeholder="32.123.12.34" ng-model="server.ip" type="text">
+                <label>Username</label>
+                <input name="username" placeholder="root" ng-model="server.username" type="text">
+                <label>Password</label>
+                <input name="password" ng-model="server.password" type="password"> 
+                <label>Directory</label>
+                <input name="directory" placeholder="/var/www/html/drupal/docroot/" ng-model="server.directory" type="text"> 
+                <label>command</label>
+                <input name="command" placeholder="git pull origin master" ng-model="server.command" type="text">
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+        <div ng-show="errorMsg">{{errorMsg}}</div>
+        <div ng-show="successMsg">{{successMsg}}</div>
+    </body>
+    <script>
+        var autoDeploy = angular.module('autoDeploy', []);
+        autoDeploy.controller('mainController', function($scope, $http) {
+            
+            var repo = "";
+            var owner = "";
+            var branch = "";
+            
+            $scope.fetchBranch = function(obj){
+                repo = obj.target.attributes.repo.value;
+                owner = obj.target.attributes.owner.value;
+                $http({
+                  method  : 'GET',
+                  url     : '/choosebranch/'+repo+'/'+owner,
+                  data    : $scope.user
+                 })
+                .success(function(data) {
+                  $scope.branches = data;
+                })
+                .error(function(err){
+                  $scope.errorMsg = err;
+                });
+            }
+            
+            $scope.loadForm = function(obj){
+                $scope.loadform = 1;
+                branch = obj.target.attributes.branch.value;
+            }
+            
+            $scope.addHook = function(){
+                var jist = {
+                    owner:owner,
+                    reponame:repo,
+                    branch:branch,
+                    serverip:$scope.server.ip,
+                    serveruser:$scope.server.username,
+                    serverpass:$scope.server.password,
+                    serverpath:$scope.server.directory,
+                    command:$scope.server.command
+                };
+                alert(JSON.stringify(jist));
+                $http({
+                  method  : 'POST',
+                  url     : '/addwebhook',
+                  data    : JSON.stringify(jist)
+                 })
+                .success(function(data) {
+                  $scope.successMsg = data;
+                })
+                .error(function(err){
+                  $scope.errorMsg = err;
+                });
+            }
+        });
+    </script>
+</html>
