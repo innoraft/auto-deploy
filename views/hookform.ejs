@@ -1,31 +1,59 @@
 <html>
-    <script src= "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script> 
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+        <script src= "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+        <style>
+            .button-secondary {
+                background: rgb(66, 184, 221); /* this is a light blue */
+            }
+            .container{
+                width:80%;
+                min-width:400px;
+                margin-right:auto;
+                margin-left:auto;
+            }
+            .list{
+                text-align: center;
+            }
+            .list-term{
+                margin-right: 2px;
+                margin-top: 5px;
+            }
+            </style>
+    </head>
     <body ng-app="autoDeploy" ng-controller="mainController">
         <div class="container">
             <div class="list repo">
-                <%for (i in repolist){%>
-                    <button ng-model="data.repo" ng-click="fetchBranch($event)" repo="<%=repolist[i].name%>" owner="<%=repolist[i].owner%>"><%=repolist[i].fullname%></button>
-                <%}%>
+                <h2 class="content-subhead">Choose a Repo</h2>
+                <p>
+                    <%for (i in repolist){%>
+                        <button class='pure-button-primary pure-button list-term' ng-model="data.repo" ng-click="fetchBranch($event)" repo="<%=repolist[i].name%>" owner="<%=repolist[i].owner%>"><%=repolist[i].fullname%></button>
+                    <%}%>
+                </p>
             </div>
-            <div ng-show = "branches" class="list branch" ng-repeat="names in branches">
-                <button ng-model="data.repo" ng-click="loadForm($event)" branch="{{names.name}}">{{names.name}}</button>
+            <div ng-show = "branches" class="list branch">
+                <h2 class="content-subhead">Choose a Branch</h2>
+                <p>
+                    <button class='button-secondary pure-button list-term' ng-repeat="names in branches" ng-model="data.repo" ng-click="loadForm($event)" branch="{{names.name}}">{{names.name}}</button>
+                </p>
             </div>
-            <form ng-show = "loadform" ng-submit="addHook()">
-                <label>Server IP</label>
-                <input name="ip" placeholder="32.123.12.34" ng-model="server.ip" type="text">
-                <label>Username</label>
-                <input name="username" placeholder="root" ng-model="server.username" type="text">
-                <label>Password</label>
-                <input name="password" ng-model="server.password" type="password"> 
-                <label>Directory</label>
-                <input name="directory" placeholder="/var/www/html/drupal/docroot/" ng-model="server.directory" type="text"> 
-                <label>command</label>
-                <input name="command" placeholder="git pull origin master" ng-model="server.command" type="text">
-                <button type="submit">Submit</button>
+            <form class="pure-form pure-form-stacked" ng-show = "loadform" ng-submit="addHook()">
+                <label for="id">Server IP</label>
+                <input id ="ip" name="ip" placeholder="32.123.12.34" ng-model="server.ip" type="text">
+                <label for="username">Username</label>
+                <input id="username" name="username" placeholder="root" ng-model="server.username" type="text">
+                <label for="password">Password</label>
+                <input id="password" name="password" ng-model="server.password" type="password"> 
+                <label for="directory">Directory</label>
+                <input class = "pure-input-2-3" id="directory" name="directory" placeholder="/var/www/html/drupal/docroot/" ng-model="server.directory" type="text"> 
+                <label for="command">command</label>
+                <input id="command" name="command" placeholder="git pull origin master" ng-model="server.command" type="text">
+                <button class="pure-button pure-button-primary" type="submit">Submit</button>
             </form>
+            <div ng-show="errorMsg">{{errorMsg}}</div>
+            <div ng-show="successMsg">{{successMsg}}</div>
         </div>
-        <div ng-show="errorMsg">{{errorMsg}}</div>
-        <div ng-show="successMsg">{{successMsg}}</div>
     </body>
     <script>
         var autoDeploy = angular.module('autoDeploy', []);

@@ -112,7 +112,7 @@ app.post('/addwebhook', function(req, res){
         {
             var hookid = done.data.hookid;
             Pull.getPull(hookid, branch, function(done){
-                if(!done.status || (done.serverip != serverip || done.serveruser != serveruser || done.serverpass != serverpass || done.serverpath != serverpath || done.command != command ))
+                if(!done.status || (done.serverip != serverip || done.serveruser != serveruser || done.serverpass != serverpass || done.serverpath != serverpath || done.command != command )) //Check if there is no exact same pull already in db
                 {
                   res.send(addNewPull(hookid, branch,serverip,serveruser,serverpass,serverpath,command));  
                 }
@@ -195,7 +195,7 @@ app.post('/pullrepo/:user/:reponame', function(req, res){
                 }
             });
         }
-    })
+    });
 });
 
 function getRepos(token, page, repolist, callback){

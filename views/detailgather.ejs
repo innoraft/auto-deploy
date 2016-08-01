@@ -1,5 +1,26 @@
-<form method="get" action="/forwardtoauth">
-  Github username:<br>
-  <input type="text" name="username"><br>
-  <input type="submit" value="Submit">
-</form>
+<html>
+    <head>
+        <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+        <style>
+            .mainform{
+                text-align: center;
+                height: 100px;
+                position: absolute;
+                top:0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                margin: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <form class="mainform pure-form pure-form-aligned" method="get" action="/forwardtoauth">
+              <lable for="username">Github username</lable>
+              <input id="username" type="text" name="username">
+              <input class="pure-button pure-button-primary" type="submit" value="Submit">
+            </form>
+        </div>
+    </body>
+</html>
