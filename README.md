@@ -2,8 +2,8 @@ Auto Deploy
 ====
 
 ###Objective
-* To provide a way to automatically deply code from github to your server when a event happens.
-* Give option for multiple deploy strategy based on server, branch and repo etc.
+* To provide a way to automatically deply code from github to your server when an event happens.
+* Give option for multiple deployment strategy based on server, branch and repo etc.
 
 ###Roadmap
 * To allow user to login via gihub - Done
@@ -14,6 +14,7 @@ Auto Deploy
 * Use `mongo` to store all data and `angular.js` for form - Done
 * Perform command on server when webhook url is touched - Done
 * Make code DRY. Test it out. Fix minor bugs - ToDo
+* Beautify the form pages by CSS. -ToDo
 
 ###To run
 * install `node.js` . Prefer version > 4.
