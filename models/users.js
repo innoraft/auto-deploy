@@ -31,7 +31,8 @@ UserSchema.statics.findUser=function(username, callback){
             callback(output);
         }
         else if(data.token == undefined) {
-            UserSchema.removeUser(username, function(done){
+            User = Users;
+            User.removeUser(username, function(done){
                 var output={status: false, message:"No Token found"};
                 callback(output);
             })

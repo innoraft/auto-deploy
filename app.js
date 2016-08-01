@@ -56,7 +56,7 @@ app.get('/forwardtoauth', function (req, res) {
                     res.send("Please retry");
                 }
                 else{
-                    res.redirect("https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url + "/gettoken");
+                    res.redirect("https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url+':'+_globals.app_port + "/gettoken");
                 }
             });
         }
