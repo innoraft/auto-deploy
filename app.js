@@ -13,6 +13,7 @@ var _globals = require('./_globals.js');
 mongoose.connect('mongodb://localhost/'+_globals.dbname);
 Users = require('./models/users');
 Pulls = require('./models/pulls');
+Hooks = require('./models/hooks');
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -104,50 +105,80 @@ app.post('/addwebhook', function(req, res){
         command = req.body.command,
         token = _token;
     
-    createHookonRepo(owner, reponame, branch, token , function(resl){
-        var hookid = resl.id;
-        Pull = Pulls;
-        Pull.newPull(hookid, owner, reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(done){
-            if(done.status)
-                res.send(resl);
-            else
-                {
-                    deleteHookId(owner, reponame, hookid , token, function(result){
-                        res.send("Opps try again.")
-                    });
-                }
-        });
+    Hook = Hooks;
+    Hook.getHook(owner, reponame, function(done){
+       if(done.status)
+           //Hook exists check branch, server
+        else{
+            createHookonRepo(owner, reponame, branch, token , function(resl){
+                var hookid = resl.id;
+                Hook.newHook(hookid, owner, reponame, function(done){
+                    if(done.status)
+                    {
+                       Pull = Pulls;
+                        Pull.newPull(hookid, owner, reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(done){
+                            if(done.status)
+                                res.send(resl);
+                            else
+                            {
+                                deleteHookId(owner, reponame, hookid , token, function(result){
+                                    res.send("Opps try again.")
+                                });
+                            }
+                        }); 
+                    }
+                    else{
+                            deleteHookId(owner, reponame, hookid , token, function(result){
+                                res.send("Opps try again.")
+                            });
+                    }
+                });
+            });
+        }
     });
 });
 
-app.get('/pullrepo/:user/:reponame/:branch', function(req, res){
+app.post('/pullrepo/:user/:reponame', function(req, res){
     var repo =  req.params.reponame,
-        branch = req.params.branch,
+        branch = req.body.ref.split('/')[2],
+        b = req.body.ref,
         user = req.params.user;
-    Pull = Pulls;
-    Pull.getPull( user, repo, branch, function(done){
-        if(!done.status){
-            console.log("Repo and branch not foundin DB.", repo, branch);
-        }
-        else{
-                var SSH = require('simple-ssh');
+    console.log(branch);
+    b=b.split('/');
+    b=b[2];
+    console.log(b);
+    Hook = Hooks;
+    Hook.getHook(user, repo, function(done){
+        if(done)
+        {
+            hookid = done.data,
+            Pull = Pulls;
+            Pull.getPull( hookid, branch, function(done){
+                if(!done.status){
+                    console.log("Repo and branch not foundin DB.", repo, branch);
+                }
+                else
+                {
+                    var SSH = require('simple-ssh');
 
-                var ssh = new SSH({
-                    host: done.data.serverip,
-                    user: done.data.serveruser,
-                    pass: done.data.serverpass
-                });
+                    var ssh = new SSH({
+                        host: done.data.serverip,
+                        user: done.data.serveruser,
+                        pass: done.data.serverpass
+                    });
 
-                ssh.exec("cd "+done.data.serverpath+" && "+done.data.command, {
-                    out: function(stdout) {
-                        console.log(stdout);
-                    },
-                    err: function(stderr) {
-                        console.log(stderr); // this-does-not-exist: command not found 
-                    }
-                }).start();
+                    ssh.exec("cd "+done.data.serverpath+" && "+done.data.command, {
+                        out: function(stdout) {
+                            console.log(stdout);
+                        },
+                        err: function(stderr) {
+                            console.log(stderr); // this-does-not-exist: command not found 
+                        }
+                    }).start();
+                }
+            });
         }
-    });
+    })
 });
 
 function getRepos(token, page, repolist, callback){
@@ -266,7 +297,7 @@ function createHookonRepo(username, reponame, branch , token, callback){
         repo :reponame,
         name : "web",
         config	: {
-            url : _globals.webhook_callback_url+'/pullrepo/'+username+'/'+reponame+'/'+branch
+            url : _globals.webhook_callback_url+":"+_globals.app_port+'/pullrepo/'+username+'/'+reponame
         }
     }, function(err,resl){
         console.log(JSON.stringify(resl));
@@ -295,7 +326,7 @@ function deleteHookId(username, reponame, id , token, callback){
         token: token
     });
 
-    github.repos.deleteHook({ 
+    github.repos.deleteHook({
         user: username,
         repo :reponame,
         id : id,
