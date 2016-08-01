@@ -1,4 +1,5 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
@@ -7,6 +8,9 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
+
+// prepare server
+app.use('/assets', express.static('./assets/'));
 
 var _globals = require('./_globals.js');
 
