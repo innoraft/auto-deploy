@@ -1,14 +1,23 @@
 Auto Deploy
 ====
 
+###Objective
+* To provide a way to automatically deply code from github to your server when a event happens.
+* Give option for multiple deploy strategy based on server, branch and repo etc.
+
 ###Roadmap
 * To allow user to login via gihub - Done
 * Fetch repolist from the user's github page - Done
+* Fetch branch list from the same repo - Done
+* Ask for server details - Done
 * Add the webhook to the selected repo - Done
-* On web hook url add command to git pull - Done
-* Attach DB to save hookurl with reponame and server creds to be used for pulling. -ToDo
+* Use `mongo` to store all data and `angular.js` for form - Done
+* Perform command on server when webhook url is touched - Done
+* Make code DRY. Test it out. Fix minor bugs - ToDo
 
 ###To run
+* install `node.js` . Prefer version > 4.
+* install `mongodb`.
 * Modify all `sample.*` files and save as `*` files.
 * Perform `npm install`
 * Do `node app.js`
