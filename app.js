@@ -106,31 +106,36 @@ app.post('/addwebhook', function(req, res){
         token = _token;
     
     Hook = Hooks;
+    Pull = Pulls;
     Hook.getHook(owner, reponame, function(done){
-       if(done.status)
-           //Hook exists check branch, server
-        else{
+        if(done.status && done.data)
+        {
+            var hookid = done.data.hookid;
+            Pull.getPull(hookid, branch, function(done){
+                if(!done.status || (done.serverip != serverip || done.serveruser != serveruser || done.serverpass != serverpass || done.serverpath != serverpath || done.command != command ))
+                {
+                  res.send(addNewPull(hookid, branch,serverip,serveruser,serverpass,serverpath,command));  
+                }
+                else
+                {
+                    res.send("Exact same pull already exists. I wonder why would you wanna make it again.");
+                }
+           });
+        }
+        else
+        {
             createHookonRepo(owner, reponame, branch, token , function(resl){
                 var hookid = resl.id;
                 Hook.newHook(hookid, owner, reponame, function(done){
                     if(done.status)
                     {
-                       Pull = Pulls;
-                        Pull.newPull(hookid, owner, reponame, branch,serverip,serveruser,serverpass,serverpath,command, function(done){
-                            if(done.status)
-                                res.send(resl);
-                            else
-                            {
-                                deleteHookId(owner, reponame, hookid , token, function(result){
-                                    res.send("Opps try again.")
-                                });
-                            }
-                        }); 
+                        res.send(addNewPull(hookid, branch,serverip,serveruser,serverpass,serverpath,command)); 
                     }
-                    else{
-                            deleteHookId(owner, reponame, hookid , token, function(result){
-                                res.send("Opps try again.")
-                            });
+                    else
+                    {
+                        deleteHookId(owner, reponame, hookid , token, function(result){
+                            res.send("Opps try again.")
+                        });
                     }
                 });
             });
@@ -138,23 +143,35 @@ app.post('/addwebhook', function(req, res){
     });
 });
 
+function addNewPull(hookid, branch,serverip,serveruser,serverpass,serverpath,command){
+    Pull = Pulls;
+    Pull.newPull(hookid, branch,serverip,serveruser,serverpass,serverpath,command, function(done){
+        if(done.status)
+            return(done.data);
+        else
+        {
+            deleteHookId(owner, reponame, hookid , token, function(result){
+                return("Opps try again.")
+            });
+        }
+    }); 
+}
+
 app.post('/pullrepo/:user/:reponame', function(req, res){
+    res.send("Hey Mate!");
     var repo =  req.params.reponame,
-        branch = req.body.ref.split('/')[2],
-        b = req.body.ref,
+        branch = (JSON.parse(req.body.payload)).ref,
         user = req.params.user;
-    console.log(branch);
-    b=b.split('/');
-    b=b[2];
-    console.log(b);
+    branch=branch.split('/');
+    branch=branch[2];
     Hook = Hooks;
     Hook.getHook(user, repo, function(done){
-        if(done)
+        if(done.status && done.data)
         {
             hookid = done.data,
             Pull = Pulls;
             Pull.getPull( hookid, branch, function(done){
-                if(!done.status){
+                if(!done.status && !done.data){
                     console.log("Repo and branch not foundin DB.", repo, branch);
                 }
                 else

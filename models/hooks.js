@@ -33,7 +33,7 @@ HookSchema.statics.getHook=function(user, repo, callback){
         }
         else
         {
-           var output={status: true, data:data.hookid};
+           var output={status: true, data:data};
             callback(output);
         }
     });    
