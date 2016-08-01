@@ -24,6 +24,35 @@
     </head>
     <body ng-app="autoDeploy" ng-controller="mainController">
         <div class="container">
+            <form class="list pure-form pure-form-aligned" ng-show = "loadform" ng-submit="addHook()">
+                <div class="pure-control-group">
+                    <label for="id">Server IP</label>
+                    <input id ="ip" name="ip" placeholder="32.123.12.34" ng-model="server.ip" type="text">
+                </div>
+                <div class="pure-control-group">
+                    <label for="username">Username</label>
+                    <input id="username" name="username" placeholder="root" ng-model="server.username" type="text">
+                </div>
+                <div class="pure-control-group">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" ng-model="server.password" type="password"> 
+                </div>
+                <div class="pure-control-group">
+                    <label for="directory">Directory</label>
+                    <input class = "pure-input-3-5" id="directory" name="directory" placeholder="/var/www/html/drupal/docroot/" ng-model="server.directory" type="text"> 
+                </div>
+                <div class="pure-control-group">
+                    <label for="command">command</label>
+                    <input id="command" name="command" placeholder="git pull origin master" ng-model="server.command" type="text">
+                </div>
+                <button class="pure-button pure-button-primary" type="submit">Submit</button>
+            </form>
+            <div ng-show = "branches" class="list branch">
+                <h2 class="content-subhead">Choose a Branch</h2>
+                <p>
+                    <button class='button-secondary pure-button list-term' ng-repeat="names in branches" ng-model="data.repo" ng-click="loadForm($event)" branch="{{names.name}}">{{names.name}}</button>
+                </p>
+            </div>
             <div class="list repo">
                 <h2 class="content-subhead">Choose a Repo</h2>
                 <p>
@@ -32,25 +61,6 @@
                     <%}%>
                 </p>
             </div>
-            <div ng-show = "branches" class="list branch">
-                <h2 class="content-subhead">Choose a Branch</h2>
-                <p>
-                    <button class='button-secondary pure-button list-term' ng-repeat="names in branches" ng-model="data.repo" ng-click="loadForm($event)" branch="{{names.name}}">{{names.name}}</button>
-                </p>
-            </div>
-            <form class="pure-form pure-form-stacked" ng-show = "loadform" ng-submit="addHook()">
-                <label for="id">Server IP</label>
-                <input id ="ip" name="ip" placeholder="32.123.12.34" ng-model="server.ip" type="text">
-                <label for="username">Username</label>
-                <input id="username" name="username" placeholder="root" ng-model="server.username" type="text">
-                <label for="password">Password</label>
-                <input id="password" name="password" ng-model="server.password" type="password"> 
-                <label for="directory">Directory</label>
-                <input class = "pure-input-2-3" id="directory" name="directory" placeholder="/var/www/html/drupal/docroot/" ng-model="server.directory" type="text"> 
-                <label for="command">command</label>
-                <input id="command" name="command" placeholder="git pull origin master" ng-model="server.command" type="text">
-                <button class="pure-button pure-button-primary" type="submit">Submit</button>
-            </form>
             <div ng-show="errorMsg">{{errorMsg}}</div>
             <div ng-show="successMsg">{{successMsg}}</div>
         </div>

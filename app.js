@@ -3,6 +3,20 @@ var app = express();
 var http = require('http').Server(app);
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
+var morgan = require('morgan');
+var fs = require('fs');
+
+var _globals = require('./_globals.js');
+
+var accessLogStream = fs.createWriteStream(_globals.dirname_log + _globals.filename_log, {flags: 'a'}); 
+// setup the logger 
+app.use(morgan('combined', {stream: accessLogStream}));
+
+if (_globals.env === 'development')
+{
+    app.use(morgan('dev'));
+    mongoose.set('debug', true);
+}
 
 app.use(bodyParser.urlencoded({
     extended: true
@@ -11,8 +25,6 @@ app.use(bodyParser.json());
 
 // prepare server
 app.use('/assets', express.static('./assets/'));
-
-var _globals = require('./_globals.js');
 
 mongoose.connect('mongodb://localhost/'+_globals.dbname);
 Users = require('./models/users');
