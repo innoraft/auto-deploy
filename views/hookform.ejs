@@ -76,6 +76,7 @@
             var branch = "";
             
             $scope.fetchBranch = function(obj){
+                branch = "";
                 repo = obj.target.attributes.repo.value;
                 owner = obj.target.attributes.owner.value;
                 $http({

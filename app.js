@@ -93,7 +93,7 @@ var _github = "";
 var createGithubObject = function(token){
     var GitHubApi = require("github");
 
-    var _github = new GitHubApi({
+        _github = new GitHubApi({
         // optional
         debug: true,
         protocol: "https",
