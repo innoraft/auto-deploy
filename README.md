@@ -14,7 +14,7 @@ Auto Deploy
 * Use `mongo` to store all data and `angular.js` for form - Done
 * Perform command on server when webhook url is touched - Done
 * Make code DRY. Test it out. Fix minor bugs - ToDo
-* Beautify the form pages by CSS. -ToDo
+* Make the app multiuser. Login/Logout abilities. -ToDo
 
 ###To run
 * install `node.js` . Prefer version > 4.
