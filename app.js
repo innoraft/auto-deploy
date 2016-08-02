@@ -39,14 +39,14 @@ app.get('/', function (req, res) {
 });
 
 var _username = "";
-var _token = "";
 app.get('/forwardtoauth', function (req, res) {
     _username = req.query.username;
     User = Users;
     User.findUser(_username, function(done){
         if(done.status)
         {
-            _token = done.token;
+            var token = done.token;
+            createGithubObject(token);
             res.redirect(/chooserepo/);
         }
         else
@@ -78,7 +78,7 @@ var request = require('request');
                     User.addTokenToUser(_username, token, function(done){
                         console.log("saved token :",done.status);
                     })
-                    _token = token;
+                    createGithubObject(token);
                     res.redirect(/chooserepo/);
                 }
                 else {
@@ -89,11 +89,34 @@ var request = require('request');
     );
 });
 
+var _github = "";
+var createGithubObject = function(token){
+    var GitHubApi = require("github");
+
+    var _github = new GitHubApi({
+        // optional
+        debug: true,
+        protocol: "https",
+        host: "api.github.com", // should be api.github.com for GitHub
+        pathPrefix: "", // for some GHEs; none for GitHub
+        timeout: 5000,
+        headers: {
+            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
+        },
+        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
+    });
+
+    _github.authenticate({
+        type: "oauth",
+        token: token
+    });
+}
+
 app.get('/chooserepo', function (req, res) {
-    if(_token != "")
+    if(_github != "")
     {
-        getRepos(_token, 1, [], function(repolist){
-            res.render('hookform',{repolist:repolist, token:_token});
+        getRepos(_github, 1, [], function(repolist){
+            res.render('hookform',{repolist:repolist});
         });
     }
     else
@@ -104,7 +127,7 @@ app.get('/chooserepo', function (req, res) {
 
 app.get('/choosebranch/:reponame/:owner', function(req, res){
     //res.send(req.params.reponame);
-    getBranches(_token, req.params.reponame, req.params.owner , 1, [], function(branchlist){
+    getBranches(_github, req.params.reponame, req.params.owner , 1, [], function(branchlist){
         res.send(branchlist);
     });
 });
@@ -118,8 +141,8 @@ app.post('/addwebhook', function(req, res){
         serveruser = req.body.serveruser,
         serverpass = req.body.serverpass,
         serverpath = req.body.serverpath,
-        command = req.body.command,
-        token = _token;
+        command = req.body.command;
+        _github = _github;
     
     Hook = Hooks;
     Pull = Pulls;
@@ -140,7 +163,7 @@ app.post('/addwebhook', function(req, res){
         }
         else
         {
-            createHookonRepo(owner, reponame, branch, token , function(resl){
+            createHookonRepo(owner, reponame, branch, _github , function(resl){
                 var hookid = resl.id;
                 Hook.newHook(hookid, owner, reponame, function(done){
                     if(done.status)
@@ -149,7 +172,7 @@ app.post('/addwebhook', function(req, res){
                     }
                     else
                     {
-                        deleteHookId(owner, reponame, hookid , token, function(result){
+                        deleteHookId(owner, reponame, hookid , _github, function(result){
                             res.send("Opps try again.")
                         });
                     }
@@ -166,7 +189,7 @@ function addNewPull(hookid, branch,serverip,serveruser,serverpass,serverpath,com
             return(done.data);
         else
         {
-            deleteHookId(owner, reponame, hookid , token, function(result){
+            deleteHookId(owner, reponame, hookid , _github, function(result){
                 return("Opps try again.")
             });
         }
@@ -214,32 +237,12 @@ app.post('/pullrepo/:user/:reponame', function(req, res){
     });
 });
 
-function getRepos(token, page, repolist, callback){
-    var GitHubApi = require("github");
-
-    var github = new GitHubApi({
-        // optional
-        debug: true,
-        protocol: "https",
-        host: "api.github.com", // should be api.github.com for GitHub
-        pathPrefix: "", // for some GHEs; none for GitHub
-        timeout: 5000,
-        headers: {
-            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
-        },
-        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
-    });
-
-    github.authenticate({
-        type: "oauth",
-        token: token
-    });
-    
+function getRepos(github, page, repolist, callback){    
     github.repos.getAll({per_page:100, page:page}, function (err, resl){
         //console.log(JSON.stringify("one fetch = ",resl));
         packRepos(resl);
         if (github.hasNextPage(resl)) {
-            getRepos(token, ++page, repolist, callback);
+            getRepos(github, ++page, repolist, callback);
         }
         else
             packRepos(null);
@@ -259,32 +262,12 @@ function getRepos(token, page, repolist, callback){
     });
 }
 
-function getBranches(token, repo, user, page, branchlist, callback){
-    var GitHubApi = require("github");
-
-    var github = new GitHubApi({
-        // optional
-        debug: true,
-        protocol: "https",
-        host: "api.github.com", // should be api.github.com for GitHub
-        pathPrefix: "", // for some GHEs; none for GitHub
-        timeout: 5000,
-        headers: {
-            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
-        },
-        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
-    });
-
-    github.authenticate({
-        type: "oauth",
-        token: token
-    });
-    
+function getBranches(github, repo, user, page, branchlist, callback){    
     github.repos.getBranches({user: user, repo:repo, per_page:100, page:page}, function (err, resl){
         //console.log(JSON.stringify(resl));
         packBranches(resl);
         if (github.hasNextPage(resl)) {
-            getBranches(token, ++page, branchlist, callback);
+            getBranches(github, ++page, branchlist, callback);
         }
         else
             packBranches(null);
@@ -304,27 +287,7 @@ function getBranches(token, repo, user, page, branchlist, callback){
     });
 }
 
-function createHookonRepo(username, reponame, branch , token, callback){
-    var GitHubApi = require("github");
-
-    var github = new GitHubApi({
-        // optional
-        debug: true,
-        protocol: "https",
-        host: "api.github.com", // should be api.github.com for GitHub
-        pathPrefix: "", // for some GHEs; none for GitHub
-        timeout: 5000,
-        headers: {
-            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
-        },
-        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
-    });
-
-    github.authenticate({
-        type: "oauth",
-        token: token
-    });
-
+function createHookonRepo(username, reponame, branch , github, callback){
     github.repos.createHook({ 
         user: username,
         repo :reponame,
@@ -338,27 +301,7 @@ function createHookonRepo(username, reponame, branch , token, callback){
     });
 }
 
-function deleteHookId(username, reponame, id , token, callback){
-    var GitHubApi = require("github");
-
-    var github = new GitHubApi({
-        // optional
-        debug: true,
-        protocol: "https",
-        host: "api.github.com", // should be api.github.com for GitHub
-        pathPrefix: "", // for some GHEs; none for GitHub
-        timeout: 5000,
-        headers: {
-            "user-agent": "auto-deploy" // GitHub is happy with a unique user agent
-        },
-        followRedirects: false, // default: true; there's currently an issue with non-get redirects, so allow ability to disable follow-redirects
-    });
-
-    github.authenticate({
-        type: "oauth",
-        token: token
-    });
-
+function deleteHookId(username, reponame, id , github, callback){
     github.repos.deleteHook({
         user: username,
         repo :reponame,

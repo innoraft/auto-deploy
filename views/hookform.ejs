@@ -12,6 +12,7 @@
                 min-width:400px;
                 margin-right:auto;
                 margin-left:auto;
+                margin-top:100px;
             }
             .list{
                 text-align: center;
@@ -25,6 +26,7 @@
     <body ng-app="autoDeploy" ng-controller="mainController">
         <div class="container">
             <form class="list pure-form pure-form-aligned" ng-show = "loadform" ng-submit="addHook()">
+                <h2 class="content-subhead">Define deployment details</h2>
                 <div class="pure-control-group">
                     <label for="id">Server IP</label>
                     <input id ="ip" name="ip" placeholder="32.123.12.34" ng-model="server.ip" type="text">
