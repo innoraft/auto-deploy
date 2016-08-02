@@ -267,7 +267,7 @@ function getBranches(github, repo, user, page, branchlist, callback){
         //console.log(JSON.stringify(resl));
         packBranches(resl);
         if (github.hasNextPage(resl)) {
-            getBranches(github, ++page, branchlist, callback);
+            getBranches(github, repo, user, ++page, branchlist, callback);
         }
         else
             packBranches(null);
