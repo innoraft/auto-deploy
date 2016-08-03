@@ -20,6 +20,7 @@ app.use(morgan('combined', {stream: accessLogStream}));
 app.use(session({ secret: crypto.randomBytes(64).toString('base64'), cookie: { maxAge: _globals.sessionMaxAge }, store: new MongoStore({ mongooseConnection: mongoose.connection }), resave: true,saveUninitialized: true}));
 var requireLogin = function() {
   return function(req, res, next) {
+      console.log("Checking require login", req.session.username);
     if(req.session.username)
     {
         next();
@@ -32,6 +33,7 @@ var requireLogin = function() {
 };
 var fillSessionData = function (req, username){
     req.session.username = username;
+    console.log("filled sssion", req.session.username);
     return true;
 }
 
@@ -89,7 +91,7 @@ app.get('/forwardtoauth', function (req, res) {
     })
 });
 
-app.get('/gettoken', requireLogin(), function (req, res) {
+app.get('/gettoken', function (req, res) {
 var request = require('request');
     request.post(
         'https://github.com/login/oauth/access_token',
