@@ -5,13 +5,37 @@ var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var fs = require('fs');
+var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
+var crypto = require('crypto');
 
 var _globals = require('./_globals.js');
 
+//Logging
 var accessLogStream = fs.createWriteStream(_globals.dirname_log + _globals.filename_log, {flags: 'a'}); 
 // setup the logger 
 app.use(morgan('combined', {stream: accessLogStream}));
 
+//Session
+app.use(session({ secret: crypto.randomBytes(64).toString('base64'), cookie: { maxAge: _globals.sessionMaxAge }, store: new MongoStore({ mongooseConnection: mongoose.connection }), resave: true,saveUninitialized: true}));
+var requireLogin = function() {
+  return function(req, res, next) {
+    if(req.session.username)
+    {
+        next();
+    }
+    else
+    {
+        res.send("No direct access");
+    }
+  }
+};
+var fillSessionData = function (req, username){
+    req.session.username = username;
+    return true;
+}
+
+//Live debug data stream for dev mode
 if (_globals.env === 'development')
 {
     app.use(morgan('dev'));
@@ -47,6 +71,7 @@ app.get('/forwardtoauth', function (req, res) {
         {
             var token = done.token;
             createGithubObject(token);
+            fillSessionData(req, _username);
             res.redirect(/chooserepo/);
         }
         else
@@ -56,6 +81,7 @@ app.get('/forwardtoauth', function (req, res) {
                     res.send("Please retry");
                 }
                 else{
+                    fillSessionData(req, _username);
                     res.redirect("https://github.com/login/oauth/authorize?client_id=" + _globals.client_id + "&scope=repo&redirect_uri=" + _globals.webhook_callback_url+':'+_globals.app_port + "/gettoken");
                 }
             });
@@ -63,7 +89,7 @@ app.get('/forwardtoauth', function (req, res) {
     })
 });
 
-app.get('/gettoken', function (req, res) {
+app.get('/gettoken', requireLogin(), function (req, res) {
 var request = require('request');
     request.post(
         'https://github.com/login/oauth/access_token',
@@ -112,7 +138,7 @@ var createGithubObject = function(token){
     });
 }
 
-app.get('/chooserepo', function (req, res) {
+app.get('/chooserepo', requireLogin(), function (req, res) {
     if(_github != "")
     {
         getRepos(_github, 1, [], function(repolist){
@@ -125,14 +151,14 @@ app.get('/chooserepo', function (req, res) {
     }
 });
 
-app.get('/choosebranch/:reponame/:owner', function(req, res){
+app.get('/choosebranch/:reponame/:owner', requireLogin(), function(req, res){
     //res.send(req.params.reponame);
     getBranches(_github, req.params.reponame, req.params.owner , 1, [], function(branchlist){
         res.send(branchlist);
     });
 });
 
-app.post('/addwebhook', function(req, res){
+app.post('/addwebhook', requireLogin(), function(req, res){
     console.log(req.body);
     var owner = req.body.owner,
         reponame = req.body.reponame,

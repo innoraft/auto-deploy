@@ -7,6 +7,7 @@ _globals = {
     ,dbname:"autodeploy"
     ,dirname_log:''
     ,filename_log:"access.log"
+    ,sessionMaxAge: 6000
 }
 
 module.exports = _globals;
